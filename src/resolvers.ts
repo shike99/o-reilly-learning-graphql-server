@@ -5,7 +5,7 @@ import { users } from '@/data/users'
 import { photos } from '@/data/photos'
 import { tags } from '@/data/tags'
 
-let id = 0
+let id = photos.length + 1
 
 export const resolvers = {
   Query: {

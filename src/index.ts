@@ -1,7 +1,9 @@
 import { ApolloServer } from 'apollo-server'
-import { typeDefs } from './schema'
+import { readFileSync } from 'fs'
+// import { typeDefs } from './schema'
 import { resolvers } from './resolvers'
 
+const typeDefs = readFileSync('./src/schema.graphql', 'utf-8')
 const server = new ApolloServer({
   typeDefs,
   resolvers,
