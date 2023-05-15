@@ -4,7 +4,6 @@ import { ApolloServer } from 'apollo-server-express'
 import { MongoClient } from 'mongodb'
 import { readFileSync } from 'fs'
 import { config } from 'dotenv'
-// import { typeDefs } from './schema'
 import { resolvers } from './resolvers'
 
 config()

@@ -108,17 +108,6 @@ export const resolvers = {
     url: (parent: Photo) => `http://yoursite.com/img/${parent.id}.jpg`,
     postedBy: (parent: Photo, args: Record<string, never>, { db }: Context) =>
       db.collection<User>('users').findOne({ githubLogin: parent.userID }),
-    // taggedUsers: (parent: Photo) =>
-    //   tags
-    //     .filter((tag) => tag.photoID === parent.id)
-    //     .map((tag) => users.find((user) => user.githubLogin === tag.userID)),
-  },
-  User: {
-    // postedPhotos: (parent: User) => photos.filter((photo) => photo.githubUser === parent.githubLogin),
-    // inPhotos: (parent: User) =>
-    //   tags
-    //     .filter((tag) => tag.userID === parent.githubLogin)
-    //     .map((tag) => photos.find((photo) => photo.id === tag.photoID)),
   },
   DateTime: new GraphQLScalarType({
     name: 'DateTime',
