@@ -1,16 +1,6 @@
 import { ApolloServer } from 'apollo-server'
-
-const typeDefs = `
-  type Query {
-    totalPhotos: Int!
-  }
-`
-
-const resolvers = {
-  Query: {
-    totalPhotos: () => 42,
-  },
-}
+import { typeDefs } from './schema'
+import { resolvers } from './resolvers'
 
 const server = new ApolloServer({
   typeDefs,
