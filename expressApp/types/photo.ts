@@ -1,10 +1,4 @@
-export enum PhotoCategory {
-  SELFIE = 'SELFIE',
-  PORTRAIT = 'PORTRAIT',
-  ACTION = 'ACTION',
-  LANDSCAPE = 'LANDSCAPE',
-  GRAPHIC = 'GRAPHIC',
-}
+export type PhotoCategory = 'SELFIE' | 'PORTRAIT' | 'ACTION' | 'LANDSCAPE' | 'GRAPHIC'
 
 export interface Photo {
   id: string
