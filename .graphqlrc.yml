@@ -1,0 +1,8 @@
+projects:
+  apollo:
+    schema: './src/schema.graphql'
+    documents: './src/**/*.{graphql,ts,tsx}'
+
+  expressApollo:
+    schema: './expressApp/schema.graphql'
+    documents: './expressApp/**/*.{graphql,ts,tsx}'
