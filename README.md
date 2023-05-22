@@ -1,6 +1,6 @@
 # O'Reilly 「初めての GraphQL」
 
-5章 GraphQLサーバーの実装
+5章 GraphQLサーバーの実装の内容をTypeScriptを使って書き直した。
 
 ## 手順
 `.env`を以下のようにして配置すること
