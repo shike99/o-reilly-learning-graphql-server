@@ -39,7 +39,7 @@ async function start() {
     return { db, currentUser }
   }
 
-  const typeDefs = readFileSync('./expressApp/schema.graphql', 'utf-8')
+  const typeDefs = readFileSync('./@apollo_server/schema.graphql', 'utf-8')
   const schema = makeExecutableSchema({ typeDefs, resolvers })
   const serverCleanup = useServer(
     {

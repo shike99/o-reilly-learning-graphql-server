@@ -67,12 +67,26 @@ export const resolvers = {
       }
 
       // 4. 新しい情報をもとにレコードを追加したり更新する
-      const { value } = await db
-        .collection<User>('users')
-        .findOneAndReplace({ githubLogin: login }, latestUserInfo, { upsert: true })
+      // 7章のサブスクリプションの追加にあたり改修
+      // const { value } = await db
+      //   .collection<User>('users')
+      //   .findOneAndReplace({ githubLogin: login }, latestUserInfo, { upsert: true })
+      const userCollection = db.collection<User>('users')
+      let user = await userCollection.findOne({ githubLogin: login })
+      if (user) {
+        await userCollection.updateOne({ githubLogin: login }, latestUserInfo, { upsert: true })
+      } else {
+        const { insertedId } = await userCollection.insertOne(latestUserInfo)
+        user = {
+          ...latestUserInfo,
+          _id: insertedId,
+        }
+
+        pubsub.publish('new-user', latestUserInfo)
+      }
 
       // 5. ユーザーデータとトークンを返す
-      return { user: value, token: access_token }
+      return { user, token: access_token }
     },
     addFakeUsers: async (root: Record<string, never>, { count }: { count: number }, { db }: PhotoShareContext) => {
       interface FakeUser {
@@ -91,6 +105,8 @@ export const resolvers = {
       }))
 
       await db.collection<User>('users').insertMany(users)
+
+      users.forEach((user) => pubsub.publish('new-user', user))
 
       return users
     },
@@ -113,12 +129,15 @@ export const resolvers = {
   },
   Subscription: {
     newPhoto: {
-      subscribe: () => pubsub.asyncIterator(['photo-added']),
+      subscribe: () => pubsub.asyncIterator('photo-added'),
+    },
+    newUser: {
+      subscribe: () => pubsub.asyncIterator('new-user'),
     },
   },
   Photo: {
     id: (parent: Photo) => parent.id || parent._id,
-    url: (parent: Photo) => `http://yoursite.com/img/${parent.id}.jpg`,
+    url: (parent: Photo) => `http://yoursite.com/img/${parent.id || parent._id}.jpg`,
     postedBy: (parent: Photo, args: Record<string, never>, { db }: PhotoShareContext) =>
       db.collection<User>('users').findOne({ githubLogin: parent.userID }),
   },
