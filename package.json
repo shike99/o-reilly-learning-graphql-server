@@ -2,26 +2,34 @@
   "name": "photo-share-api",
   "scripts": {
     "apollo": "ts-node-dev -r tsconfig-paths/register --respawn src/index.ts",
-    "express-apollo": "ts-node-dev -r tsconfig-paths/register --respawn expressApp/index.ts"
+    "express-apollo": "ts-node-dev -r tsconfig-paths/register --respawn expressApp/index.ts",
+    "@apollo/server": "ts-node-dev -r tsconfig-paths/register --respawn @apollo_server/index.ts"
   },
   "dependencies": {
+    "@apollo/server": "^4.7.1",
+    "@graphql-tools/schema": "^10.0.0",
     "apollo-server": "^3.12.0",
     "apollo-server-express": "^3.12.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "graphql": "^16.6.0",
     "graphql-playground-middleware-express": "^1.7.23",
-    "mongodb": "^5.5.0"
+    "graphql-subscriptions": "^2.0.0",
+    "graphql-ws": "^5.13.1",
+    "mongodb": "^5.5.0",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
     "@types/node-fetch": "^2.6.3",
+    "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.59.5",
     "@typescript-eslint/parser": "^5.59.5",
     "eslint": "^8.40.0",
     "eslint-config-prettier": "^8.8.0",
     "node-fetch": "^2.6.11",
     "prettier": "^2.8.8",
+    "prettier-plugin-organize-imports": "^3.2.2",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",

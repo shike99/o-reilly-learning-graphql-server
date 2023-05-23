@@ -1,9 +1,9 @@
+import { photos } from '@/data/photos'
+import { tags } from '@/data/tags'
+import { users } from '@/data/users'
 import { GraphQLScalarType, Kind } from 'graphql'
 import { Photo, PhotoInput } from './types/photo'
 import { User } from './types/user'
-import { users } from '@/data/users'
-import { photos } from '@/data/photos'
-import { tags } from '@/data/tags'
 
 let id = photos.length + 1
 

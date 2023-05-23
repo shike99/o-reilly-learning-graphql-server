@@ -1,29 +1,31 @@
 import { GraphQLScalarType, Kind } from 'graphql'
-import { Db } from 'mongodb'
+import { PubSub } from 'graphql-subscriptions'
 import fetch from 'node-fetch'
+import { PhotoShareContext } from '.'
 import { authorizeWithGithub } from './auth'
 import { Photo, PhotoInput } from './types/photo'
 import { User } from './types/user'
 
-interface Context {
-  db: Db
-  currentUser: User
-}
+const pubsub = new PubSub()
 
 export const resolvers = {
   Query: {
-    me: (parent: Record<string, never>, args: Record<string, never>, { currentUser }: Context) => currentUser,
-    totalPhotos: (parent: Record<string, never>, args: Record<string, never>, { db }: Context) =>
-      db.collection('photos').estimatedDocumentCount(),
-    allPhotos: (parent: Record<string, never>, args: { after: Date }, { db }: Context) =>
-      db.collection('photos').find().toArray(),
-    totalUsers: (parent: Record<string, never>, args: Record<string, never>, { db }: Context) =>
-      db.collection('users').estimatedDocumentCount(),
-    allUsers: (parent: Record<string, never>, args: { after: Date }, { db }: Context) =>
-      db.collection('users').find().toArray(),
+    me: (parent: Record<string, never>, args: Record<string, never>, { currentUser }: PhotoShareContext) => currentUser,
+    totalPhotos: (parent: Record<string, never>, args: Record<string, never>, { db }: PhotoShareContext) =>
+      db.collection<Photo>('photos').estimatedDocumentCount(),
+    allPhotos: (parent: Record<string, never>, args: { after: Date }, { db }: PhotoShareContext) =>
+      db.collection<Photo>('photos').find().toArray(),
+    totalUsers: (parent: Record<string, never>, args: Record<string, never>, { db }: PhotoShareContext) =>
+      db.collection<User>('users').estimatedDocumentCount(),
+    allUsers: (parent: Record<string, never>, args: { after: Date }, { db }: PhotoShareContext) =>
+      db.collection<User>('users').find().toArray(),
   },
   Mutation: {
-    async postPhoto(parent: Record<string, never>, args: { input: PhotoInput }, { db, currentUser }: Context) {
+    async postPhoto(
+      parent: Record<string, never>,
+      args: { input: PhotoInput },
+      { db, currentUser }: PhotoShareContext
+    ) {
       // 1. コンテキストにユーザーがいなければエラーを投げる
       if (!currentUser) {
         throw new Error('only an authorized user can post a photo')
@@ -39,9 +41,11 @@ export const resolvers = {
       // 3. 新しいphotoを追加して、データベースが生成したIDを取得する
       const { insertedId } = await db.collection<PhotoInput>('photos').insertOne(newPhoto)
 
+      pubsub.publish('photo-added', { newPhoto })
+
       return { ...newPhoto, id: insertedId }
     },
-    async githubAuth(parent: Record<string, never>, { code }: { code: string }, { db }: Context) {
+    async githubAuth(parent: Record<string, never>, { code }: { code: string }, { db }: PhotoShareContext) {
       // 1. GitHubからデータを取得する
       const { message, access_token, avatar_url, login, name } = await authorizeWithGithub({
         client_id: process.env.GITHUB_CLIENT_ID || '',
@@ -70,7 +74,7 @@ export const resolvers = {
       // 5. ユーザーデータとトークンを返す
       return { user: value, token: access_token }
     },
-    addFakeUsers: async (root: Record<string, never>, { count }: { count: number }, { db }: Context) => {
+    addFakeUsers: async (root: Record<string, never>, { count }: { count: number }, { db }: PhotoShareContext) => {
       interface FakeUser {
         login: { username: string; sha1: string }
         name: { first: string; last: string }
@@ -90,7 +94,11 @@ export const resolvers = {
 
       return users
     },
-    async fakeUserAuth(parent: Record<string, never>, { githubLogin }: { githubLogin: string }, { db }: Context) {
+    async fakeUserAuth(
+      parent: Record<string, never>,
+      { githubLogin }: { githubLogin: string },
+      { db }: PhotoShareContext
+    ) {
       const user = await db.collection<User>('users').findOne({ githubLogin })
 
       if (!user) {
@@ -103,10 +111,15 @@ export const resolvers = {
       }
     },
   },
+  Subscription: {
+    newPhoto: {
+      subscribe: () => pubsub.asyncIterator(['photo-added']),
+    },
+  },
   Photo: {
     id: (parent: Photo) => parent.id || parent._id,
     url: (parent: Photo) => `http://yoursite.com/img/${parent.id}.jpg`,
-    postedBy: (parent: Photo, args: Record<string, never>, { db }: Context) =>
+    postedBy: (parent: Photo, args: Record<string, never>, { db }: PhotoShareContext) =>
       db.collection<User>('users').findOne({ githubLogin: parent.userID }),
   },
   DateTime: new GraphQLScalarType({

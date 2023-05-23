@@ -1,9 +1,9 @@
-import express from 'express'
-import expressPlayground from 'graphql-playground-middleware-express'
 import { ApolloServer } from 'apollo-server-express'
-import { MongoClient } from 'mongodb'
-import { readFileSync } from 'fs'
 import { config } from 'dotenv'
+import express from 'express'
+import { readFileSync } from 'fs'
+import expressPlayground from 'graphql-playground-middleware-express'
+import { MongoClient } from 'mongodb'
 import { resolvers } from './resolvers'
 
 config()
