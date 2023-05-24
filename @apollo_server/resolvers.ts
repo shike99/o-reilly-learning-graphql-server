@@ -1,3 +1,4 @@
+import { createWriteStream } from 'fs'
 import { GraphQLScalarType, Kind } from 'graphql'
 import { PubSub } from 'graphql-subscriptions'
 import fetch from 'node-fetch'
@@ -13,8 +14,16 @@ export const resolvers = {
     me: (parent: Record<string, never>, args: Record<string, never>, { currentUser }: PhotoShareContext) => currentUser,
     totalPhotos: (parent: Record<string, never>, args: Record<string, never>, { db }: PhotoShareContext) =>
       db.collection<Photo>('photos').estimatedDocumentCount(),
-    allPhotos: (parent: Record<string, never>, args: { after: Date }, { db }: PhotoShareContext) =>
-      db.collection<Photo>('photos').find().toArray(),
+    allPhotos: (
+      parent: Record<string, never>,
+      { first }: { first: number; after: Date },
+      { db }: PhotoShareContext
+    ) => {
+      if (first > 100) {
+        throw new Error('Only 100 photos can be requested at a time')
+      }
+      return db.collection<Photo>('photos').find().toArray()
+    },
     totalUsers: (parent: Record<string, never>, args: Record<string, never>, { db }: PhotoShareContext) =>
       db.collection<User>('users').estimatedDocumentCount(),
     allUsers: (parent: Record<string, never>, args: { after: Date }, { db }: PhotoShareContext) =>
@@ -23,7 +32,7 @@ export const resolvers = {
   Mutation: {
     async postPhoto(
       parent: Record<string, never>,
-      args: { input: PhotoInput },
+      { input }: { input: PhotoInput },
       { db, currentUser }: PhotoShareContext
     ) {
       // 1. コンテキストにユーザーがいなければエラーを投げる
@@ -33,13 +42,17 @@ export const resolvers = {
 
       // 2. 現在のユーザーのIDとphotoを保存する
       const newPhoto = {
-        ...args.input,
+        ...input,
         userID: currentUser.githubLogin,
         created: new Date(),
       }
 
       // 3. 新しいphotoを追加して、データベースが生成したIDを取得する
       const { insertedId } = await db.collection<PhotoInput>('photos').insertOne(newPhoto)
+
+      const { createReadStream } = await input.file
+      const stream = createReadStream()
+      await stream.pipe(createWriteStream('./assets/photos'))
 
       pubsub.publish('photo-added', { newPhoto })
 
@@ -82,7 +95,7 @@ export const resolvers = {
           _id: insertedId,
         }
 
-        pubsub.publish('new-user', latestUserInfo)
+        pubsub.publish('new-user', { newUser: { ...latestUserInfo, id: insertedId } })
       }
 
       // 5. ユーザーデータとトークンを返す
@@ -104,9 +117,12 @@ export const resolvers = {
         githubToken: login.sha1,
       }))
 
-      await db.collection<User>('users').insertMany(users)
+      const userCollection = db.collection<User>('users')
+      await userCollection.insertMany(users)
 
-      users.forEach((user) => pubsub.publish('new-user', user))
+      const newUsers = await userCollection.find().sort({ _id: -1 }).limit(count).toArray()
+
+      newUsers.forEach((newUser) => pubsub.publish('new-user', { newUser }))
 
       return users
     },

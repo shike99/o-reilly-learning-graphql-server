@@ -1,3 +1,5 @@
+import { Stream } from 'stream'
+
 export type PhotoCategory = 'SELFIE' | 'PORTRAIT' | 'ACTION' | 'LANDSCAPE' | 'GRAPHIC'
 
 export interface Photo {
@@ -10,4 +12,11 @@ export interface Photo {
   created: Date
 }
 
-export type PhotoInput = Omit<Photo, 'id'>
+interface FileUpload {
+  filename: string
+  mimetype: string
+  encoding: string
+  createReadStream(): Stream
+}
+
+export type PhotoInput = Omit<Photo, 'id'> & { file: Promise<FileUpload> }

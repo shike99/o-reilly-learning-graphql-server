@@ -7,6 +7,8 @@ import cors from 'cors'
 import { config } from 'dotenv'
 import express from 'express'
 import { readFileSync } from 'fs'
+import depthLimit from 'graphql-depth-limit'
+import { createComplexityLimitRule } from 'graphql-validation-complexity'
 import { useServer } from 'graphql-ws/lib/use/ws'
 import { createServer } from 'http'
 import { Db, MongoClient, WithId } from 'mongodb'
@@ -29,6 +31,7 @@ async function start() {
   const client = await MongoClient.connect(DB_HOST)
   const db = client.db()
   const httpServer = createServer(app)
+  httpServer.timeout = 5000
   const wsServer = new WebSocketServer({
     server: httpServer,
     path,
@@ -68,6 +71,12 @@ async function start() {
         },
       },
     ],
+    validationRules: [
+      depthLimit(5),
+      createComplexityLimitRule(1000, {
+        onCost: (cost) => console.log('query cost: ', cost),
+      }),
+    ],
   })
 
   await server.start()
@@ -83,6 +92,7 @@ async function start() {
       },
     })
   )
+  app.use('/img/photos', express.static('./assets/photos'))
 
   const port = 4000
   httpServer.listen({ port }, () => console.log(`🚀 GraphQL server running @ http://localhost:${port}${path}`))
