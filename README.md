@@ -23,3 +23,12 @@ $ docker compose up
 
 $ npm run express-apollo
 ```
+
+### `@apollo/server`のアプリ起動
+```
+$ docker compose build
+
+$ docker compose up
+
+$ npm run @apollo/server
+```
